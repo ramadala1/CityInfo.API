@@ -34,10 +34,12 @@ namespace CityInfo.API.Controllers
             return Ok(PointofInterest);
         }
         [HttpPost("{cityID}/PointsOfInterests")]
-        public IActionResult CreatePointOfInterest(int cityId, [FromBody]PointsOfInterests pointsOfInterests)
+        public IActionResult CreatePointOfInterest(int cityId, [FromBody]PointsOfInterestsForCreationDto pointsOfInterests)
         {
             var city = CityDataStore.Current.Cities.FirstOrDefault(x => x.ID == cityId);
             if (city == null)
+                return NotFound();
+            if (!ModelState.IsValid)
                 return NotFound();
             var maxPointOfInterestId = CityDataStore.Current.Cities.SelectMany(x => x.pointsOfInterests).Max(x => x.Id);
             var finalPointOfInterest = new PointsOfInterests()
@@ -48,6 +50,24 @@ namespace CityInfo.API.Controllers
             };
             city.pointsOfInterests.Add(finalPointOfInterest);
             return CreatedAtRoute("GetPointofInterest", new { cityId = city.ID, id = finalPointOfInterest.Id }, finalPointOfInterest);
+        }
+
+        [HttpPut("{cityId}/PointsOfInterests/{Id}")]
+        public IActionResult UpdatePointOfInterest(int cityId,int Id, 
+            [FromBody]PointOfInterestForUpdateDto pointofinterest)
+        {
+            if (pointofinterest == null || !ModelState.IsValid)
+                return BadRequest();
+
+            var city = CityDataStore.Current.Cities.FirstOrDefault(x => x.ID == cityId);
+            if (city == null)
+                return NotFound();
+            var pointofinterestFromStore = city.pointsOfInterests.FirstOrDefault(x => x.Id == Id);
+            if (pointofinterestFromStore == null)
+                return NotFound();
+            pointofinterestFromStore.Name = pointofinterest.Name;
+            pointofinterestFromStore.Description = pointofinterest.Description;
+            return NoContent();
         }
     }
 }
