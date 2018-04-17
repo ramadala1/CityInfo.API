@@ -1,4 +1,5 @@
 ﻿using CityInfo.API.Models;
+using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -67,6 +68,41 @@ namespace CityInfo.API.Controllers
                 return NotFound();
             pointofinterestFromStore.Name = pointofinterest.Name;
             pointofinterestFromStore.Description = pointofinterest.Description;
+            return NoContent();
+        }
+        [HttpPatch("{cityId}/PointsOfInterests/{Id}")]
+        public IActionResult PachPointOfInterest(int cityId, int Id, 
+           [FromBody] JsonPatchDocument<PointOfInterestForUpdateDto> patchDocument)
+        {
+            if (patchDocument == null)
+                return BadRequest();
+            var city = CityDataStore.Current.Cities.FirstOrDefault(x => x.ID == cityId);
+            if (city == null)
+                return NotFound();
+            var pointOfInterestFromStore = city.pointsOfInterests.FirstOrDefault(x => x.Id == Id);
+            if (pointOfInterestFromStore == null)
+                return NotFound();
+            var PointOfinterestUpdateDto = new PointOfInterestForUpdateDto()
+            {
+                Name = pointOfInterestFromStore.Name,
+                Description = pointOfInterestFromStore.Description
+            };
+
+            patchDocument.ApplyTo(PointOfinterestUpdateDto,ModelState);
+            if (!ModelState.IsValid)
+                return BadRequest();
+            return NoContent();
+        }
+        [HttpDelete("{cityId}/PointsOfInterests/{id}")]
+        public IActionResult DeletePointOfInterest(int cityId,int Id)
+        {
+            var city = CityDataStore.Current.Cities.FirstOrDefault(x => x.ID == cityId);
+            if (city == null)
+                return NotFound();
+            var pointOfInterestToDelete = city.pointsOfInterests.FirstOrDefault(x => x.Id == Id);
+            if (pointOfInterestToDelete == null)
+                return NotFound();
+            city.pointsOfInterests.Remove(pointOfInterestToDelete);
             return NoContent();
         }
     }
